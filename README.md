@@ -1,5 +1,5 @@
 ## My Shiny App is here:
-✨ <https://i544c.shinyapps.io/Data_Products_Project3/#1> ✨
+✨ <http://i544c.shinyapps.io/Data_Products_Project3> ✨
 
 ## Data Products Project 3
 
