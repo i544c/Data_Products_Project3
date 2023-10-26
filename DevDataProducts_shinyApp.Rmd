@@ -1,0 +1,138 @@
+---
+title: "Shiny App - MTCars"
+author: "Author: Isaac G. Veras"
+date: "2023/10/05"
+output: 
+  html_document:
+    theme: cerulean
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    echo       = FALSE, 
+    message    = FALSE, 
+    warning    = FALSE, 
+    fig.width  = 8, 
+    fig.height = 5
+)
+```
+
+
+<div class="well">
+## 1. Influence of vehicle weight on fuel consumption:
+
+In this presentation, we explore how the weight of a vehicle, represented as 'weight' (`in thousand pounds`), affects fuel consumption, represented as 'consumption'.
+
+### 1.1. Interactive Chart - Model 1 and 2
+
+### Effects of car weight [wt] on miles per gallon [mpg]
+
+</div>
+```
+NOTE: We present an interactive graph. (Use the slider to choose the weight!)
+```
+
+```{r dir, echo=FALSE}
+library(shiny)
+shinyApp(
+        # Define UI for application to plot
+        shinyUI(fluidPage(
+
+                # Application title
+                titlePanel(""),
+
+                # Sidebar with a slider input for car weight
+                sidebarLayout(
+                        sidebarPanel(
+                                sliderInput("sliderWT", "What is the weight of the car in 1000 lbs?", 1, 6, value = 3),
+                                checkboxInput("showModel1", "Show/Hide Model 1", value = TRUE),
+                                checkboxInput("showModel2", "Show/Hide Model 2", value = TRUE)
+                        ),
+
+                        # Show a plot of the generated distribution
+                        mainPanel(
+                                plotOutput("carPlot"),
+                                h3("Predicted mpg from Model 1:"),
+                                textOutput("pred1"),
+                                h3("Predicted mpg from Model 2:"),
+                                textOutput("pred2")
+                        )
+                )
+        )),
+
+        # Define server logic required to plot
+        shinyServer(function(input, output) {
+            mtcars$wtif <- ifelse(mtcars$wt - 3 > 0, mtcars$wt - 3, 0)
+            model1      <- lm(mpg ~ wt,        data = mtcars)
+            model2      <- lm(mpg ~ wtif + wt, data = mtcars)
+
+            model1pred  <- reactive({
+                wtInput <- input$sliderWT
+                predict(model1, newdata = data.frame(wt = wtInput))
+            })
+
+            model2pred  <- reactive({
+                wtInput <- input$sliderWT
+                predict(model2, newdata = data.frame(wt = wtInput, wtif = ifelse(wtInput - 3 > 0, wtInput - 3, 0)))
+            })
+
+            output$carPlot <- renderPlot({
+                wtInput    <- input$sliderWT
+
+                plot(mtcars$wt, mtcars$mpg,
+                     xlab = "weight in 1000 lbs",
+                     ylab = "miles per gallon",
+                     bty  = "n",
+                     pch  = 16,
+                     xlim = c(1, 6),
+                     ylim = c(10, 40)
+                )
+                if(input$showModel1){
+                    abline(
+                            model1,
+                            col = "goldenrod",
+                            lwd = 2
+                    )
+                }
+                if(input$showModel2){
+                    model2lines <- predict(model2, newdata = data.frame(wt = 1:6, wtif = ifelse(1:6 - 3 > 0, 1:6 - 3, 0)))
+                    lines(1:6, model2lines, col = "darkblue", lwd = 2)
+                }
+
+                legend(25, 250, c("Model 1 Prediction", "Model 2 Prediction"),
+                       pch=16, col = c("goldenrod", "darkblue"), bty = "n", cex = 1.2)
+                points(wtInput, model1pred(), col = "goldenrod", pch = 16 , cex = 2)
+                points(wtInput, model2pred(), col = "darkblue" , pch = 16 , cex = 2)
+            })
+
+            output$pred1 <- renderText({
+                model1pred()
+            })
+
+            output$pred2 <- renderText({
+                model2pred()
+            })
+        })
+)
+```
+
+
+<div class="well">
+
+## 2. Documentation:
+
+### 2.1. The Model explained
+
+ - By selecting the car weight using the slider, the output generates a prediction of mpg from Model 1 [defined as lm(mpg ~ wt)] and a prediction of mpg from Model 2 [defined as lm(mpg ~ wtif + wt)]. The wtif in Model 2 is defined as [ifelse(wt - 3 > 0, wt - 3, 0)].
+
+ - While in Model 1 only a linear model is used, in Model 2 a hockey-stick calculation is applied where the break-point is defined at 3000 lbs car weight. Therefore, we are able to compare the effect of weight on miles per gallon and the differences in these two models.
+
+### 2.2. Conclusion
+In conclusion, although the models differ from each other, car weight and miles per gallon have a negative correlation to each other. That means, the higher the weight [wt] the less miles per gallon [mpg] and vice versa.
+
+**Reproducible Pitch Presentation:** <http://i544c.shinyapps.io/Data_Products_Project3>
+
+**GitHUb Repository:** <https://github.com/i544c/Data_Products_Project3>
+
+</div>
